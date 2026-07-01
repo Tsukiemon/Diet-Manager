@@ -71,6 +71,8 @@ export const emptyTotals: NutritionTotals = {
   salt: 0,
 };
 
+export const vegetableDailyTargetGrams = 350;
+
 export const clampScore = (value: number) => Math.min(100, Math.max(0, value));
 
 export const round1 = (value: number) => Math.round((value || 0) * 10) / 10;
@@ -154,6 +156,18 @@ export function calculateTotals(meal: Meal, foods: Food[]): NutritionTotals {
       salt: totals.salt + food.salt * quantity,
     };
   }, emptyTotals);
+}
+
+export function calculateVegetableGrams(meal: Meal, foods: Food[]) {
+  const foodMap = new Map(foods.map((food) => [food.id, food]));
+  return meal.items.reduce((total, item) => {
+    const food = foodMap.get(item.foodId);
+    const quantity = Number.isFinite(item.quantity) ? item.quantity : 0;
+    if (!food || quantity <= 0) return total;
+    const grams = food.vegetableGrams ?? 0;
+    const portionAsGrams = (food.vegetableDailyPortion ?? 0) * vegetableDailyTargetGrams;
+    return total + (grams + portionAsGrams) * quantity;
+  }, 0);
 }
 
 export function getFoodAvailability(food: Food): NutrientAvailability {

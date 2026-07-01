@@ -109,6 +109,8 @@ function normalizeFood(food: Food): Food {
     packageServings: food.packageServings ?? 0,
     servingUnit: food.servingUnit ?? "食",
     conversionFactor: food.conversionFactor ?? 1,
+    vegetableGrams: food.vegetableGrams ?? 0,
+    vegetableDailyPortion: food.vegetableDailyPortion ?? 0,
   };
 }
 
