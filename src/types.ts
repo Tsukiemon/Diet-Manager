@@ -110,6 +110,17 @@ export type MealWithScore = Meal & {
   foods: Array<Food & { quantity: number }>;
 };
 
+export type PortfolioSlot =
+  | "breakfast"
+  | "morningSnack"
+  | "lunch"
+  | "afternoonSnack"
+  | "dinner"
+  | "otherSnack"
+  | "postWorkoutProtein";
+
+export type DailyPortfolio = Record<PortfolioSlot, string>;
+
 export type RankingFilters = {
   tag: string;
   maxPrice: number | "";

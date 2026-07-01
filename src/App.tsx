@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AutoMealGenerator from "./components/AutoMealGenerator";
+import DailyPortfolio from "./components/DailyPortfolio";
 import FoodForm from "./components/FoodForm";
 import FoodList from "./components/FoodList";
 import MealBuilder from "./components/MealBuilder";
@@ -11,21 +12,24 @@ import { attachScores, defaultTarget, defaultWeights } from "./utils/scoring";
 import {
   loadFoods,
   loadMeals,
+  loadPortfolio,
   loadTarget,
   loadWeights,
   resetAllStorage,
   saveFoods,
   saveMeals,
+  savePortfolio,
   saveTarget,
   saveWeights,
   sampleFoods,
   sampleMeals,
 } from "./utils/storage";
 
-type Tab = "foods" | "builder" | "ranking" | "settings" | "auto";
+type Tab = "foods" | "builder" | "ranking" | "settings" | "auto" | "portfolio";
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "ranking", label: "ランキング" },
+  { id: "portfolio", label: "1日ポートフォリオ" },
   { id: "builder", label: "献立作成" },
   { id: "auto", label: "自動生成" },
   { id: "foods", label: "食品登録" },
@@ -36,23 +40,31 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("ranking");
   const [foods, setFoods] = useState(() => loadFoods());
   const [meals, setMeals] = useState(() => loadMeals());
+  const [portfolio, setPortfolio] = useState(() => loadPortfolio());
   const [target, setTarget] = useState(() => loadTarget());
   const [weights, setWeights] = useState(() => loadWeights());
+  const [editingFood, setEditingFood] = useState<Food | null>(null);
   const topMeal = useMemo(() => {
     return attachScores(meals, foods, target, weights).sort((a, b) => b.score.totalScore - a.score.totalScore)[0];
   }, [foods, meals, target, weights]);
 
   useEffect(() => saveFoods(foods), [foods]);
   useEffect(() => saveMeals(meals), [meals]);
+  useEffect(() => savePortfolio(portfolio), [portfolio]);
   useEffect(() => saveTarget(target), [target]);
   useEffect(() => saveWeights(weights), [weights]);
 
   const addFood = (food: Food) => setFoods((prev) => [food, ...prev]);
+  const updateFood = (food: Food) => {
+    setFoods((prev) => prev.map((item) => item.id === food.id ? food : item));
+    setEditingFood(null);
+  };
   const deleteFood = (id: string) => {
     setFoods((prev) => prev.filter((food) => food.id !== id));
     setMeals((prev) => prev.map((meal) => ({ ...meal, items: meal.items.filter((item) => item.foodId !== id) })));
   };
   const addMeal = (meal: Meal) => setMeals((prev) => [meal, ...prev]);
+  const updateMeal = (meal: Meal) => setMeals((prev) => prev.map((item) => item.id === meal.id ? meal : item));
   const deleteMeal = (id: string) => setMeals((prev) => prev.filter((meal) => meal.id !== id));
 
   const reset = () => {
@@ -103,8 +115,8 @@ export default function App() {
       <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
         {activeTab === "foods" && (
           <div className="space-y-4">
-            <FoodForm onAdd={addFood} />
-            <FoodList foods={foods} onDelete={deleteFood} />
+            <FoodForm onAdd={addFood} editingFood={editingFood} onUpdate={updateFood} onCancelEdit={() => setEditingFood(null)} />
+            <FoodList foods={foods} onEdit={setEditingFood} onDelete={deleteFood} />
           </div>
         )}
 
@@ -115,7 +127,19 @@ export default function App() {
             target={target}
             weights={weights}
             onSave={addMeal}
+            onUpdate={updateMeal}
             onDelete={deleteMeal}
+          />
+        )}
+
+        {activeTab === "portfolio" && (
+          <DailyPortfolio
+            foods={foods}
+            meals={meals}
+            portfolio={portfolio}
+            target={target}
+            weights={weights}
+            onChange={setPortfolio}
           />
         )}
 
