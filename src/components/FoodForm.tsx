@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { Food, NutrientAvailability, NutrientKey } from "../types";
-import { getFoodAvailability, round0, round1 } from "../utils/scoring";
+import { getFoodAvailability, round0, round1, vegetableDailyTargetGrams } from "../utils/scoring";
 
 type Props = {
   onAdd: (food: Food) => void;
@@ -37,6 +37,8 @@ const blank = {
   sugar: "",
   fiber: "",
   salt: "",
+  vegetableGrams: "",
+  vegetableDailyPortion: "",
   memo: "",
   tags: "",
 };
@@ -60,6 +62,8 @@ function foodToForm(food: Food) {
     sugar: availability.sugar ? String(round1(food.sugar)) : "",
     fiber: availability.fiber ? String(round1(food.fiber)) : "",
     salt: availability.salt ? String(round1(food.salt)) : "",
+    vegetableGrams: food.vegetableGrams ? String(round1(food.vegetableGrams)) : "",
+    vegetableDailyPortion: food.vegetableDailyPortion ? String(round1(food.vegetableDailyPortion)) : "",
     memo: food.memo,
     tags: food.tags.join(", "),
   };
@@ -94,6 +98,9 @@ export default function FoodForm({ onAdd, editingFood, onUpdate, onCancelEdit }:
     const value = form[key];
     return value.trim() === "" ? 0 : number(value) * conversionFactor;
   };
+  const convertedVegetableGrams = number(form.vegetableGrams) * conversionFactor;
+  const vegetableEquivalentGrams =
+    convertedVegetableGrams + number(form.vegetableDailyPortion) * vegetableDailyTargetGrams;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -125,6 +132,8 @@ export default function FoodForm({ onAdd, editingFood, onUpdate, onCancelEdit }:
       packageServings: number(form.packageServings),
       servingUnit,
       conversionFactor,
+      vegetableGrams: convertedVegetableGrams,
+      vegetableDailyPortion: number(form.vegetableDailyPortion),
       memo: form.memo.trim(),
       tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
     };
@@ -190,6 +199,34 @@ export default function FoodForm({ onAdd, editingFood, onUpdate, onCancelEdit }:
           />
         ))}
       </div>
+
+      <section className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+        <h3 className="font-bold">野菜量</h3>
+        <p className="mt-1 text-sm text-stone-600">
+          献立スコアには入れず、1日ポートフォリオだけで350g目標への達成率を見ます。
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Field
+            label="野菜量 g"
+            type="number"
+            value={form.vegetableGrams}
+            onChange={(v) => set("vegetableGrams", v)}
+            help={`${servingLabel}あたり ${round1(convertedVegetableGrams)}g`}
+          />
+          <Field
+            label="1日分の野菜に占める割合"
+            type="number"
+            value={form.vegetableDailyPortion}
+            onChange={(v) => set("vegetableDailyPortion", v)}
+            help="例: 1/2日分なら 0.5"
+          />
+          <div className="rounded-md bg-white p-3 text-sm text-stone-700">
+            <div className="text-xs font-semibold text-stone-500">野菜換算</div>
+            <div className="mt-1 text-lg font-bold">{round1(vegetableEquivalentGrams)}g</div>
+            <div className="text-xs text-stone-500">350g目標の{round1((vegetableEquivalentGrams / vegetableDailyTargetGrams) * 100)}%</div>
+          </div>
+        </div>
+      </section>
 
       <label className="block space-y-1">
         <span className="label">メモ</span>

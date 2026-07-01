@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { DailyPortfolio as DailyPortfolioType, Meal, NutritionTarget, PortfolioSlot, ScoreWeights, Food } from "../types";
-import { attachScores, round0, round1 } from "../utils/scoring";
+import { attachScores, calculateVegetableGrams, round0, round1, vegetableDailyTargetGrams } from "../utils/scoring";
 import NutritionBar, { nutritionRows } from "./NutritionBar";
 
 type Props = {
@@ -43,6 +43,8 @@ export default function DailyPortfolio({ foods, meals, portfolio, target, weight
   }, [selectedMeals]);
 
   const scored = attachScores([portfolioMeal], foods, target, weights)[0];
+  const vegetableGrams = calculateVegetableGrams(portfolioMeal, foods);
+  const vegetableRate = (vegetableGrams / vegetableDailyTargetGrams) * 100;
 
   const setSlot = (slot: PortfolioSlot, mealId: string) => {
     onChange({ ...portfolio, [slot]: mealId });
@@ -103,6 +105,21 @@ export default function DailyPortfolio({ foods, meals, portfolio, target, weight
           <Metric label="kcal" value={`${round0(scored.score.totals.calories)}`} />
           <Metric label="P/F/C" value={`${round1(scored.score.totals.protein)} / ${round1(scored.score.totals.fat)} / ${round1(scored.score.totals.carbs)}`} />
           <Metric label="塩分" value={`${round1(scored.score.totals.salt)}g`} danger={scored.score.scoredNutrients.salt && scored.score.totals.salt > target.salt} />
+        </div>
+
+        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="font-bold text-emerald-900">野菜摂取量</span>
+            <span className="font-bold text-emerald-900">
+              {round1(vegetableGrams)} / {vegetableDailyTargetGrams}g ・ {round1(vegetableRate)}%
+            </span>
+          </div>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-white">
+            <div className="h-full rounded-full bg-mint" style={{ width: `${Math.min(140, Math.max(0, vegetableRate))}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-emerald-800">
+            野菜は1日単位で評価します。献立ごとのスコアには含めません。
+          </p>
         </div>
 
         <div className="mt-4 grid gap-3">

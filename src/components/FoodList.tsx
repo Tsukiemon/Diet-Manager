@@ -1,5 +1,5 @@
 import type { Food } from "../types";
-import { getFoodAvailability, round0, round1 } from "../utils/scoring";
+import { getFoodAvailability, round0, round1, vegetableDailyTargetGrams } from "../utils/scoring";
 
 type Props = {
   foods: Food[];
@@ -34,6 +34,7 @@ export default function FoodList({ foods, onEdit, onDelete }: Props) {
             <div className="mt-2 text-sm font-semibold">
               {food.servingLabel ?? "1食"}あたり {round0(food.price)}円 / {round0(food.calories)}kcal / P{round1(food.protein)} F{round1(food.fat)} C{round1(food.carbs)}
             </div>
+            <VegetableInfo food={food} />
             <MissingNutrients food={food} />
             <div className="mt-2 flex flex-wrap gap-1">
               {food.tags.map((tag) => (
@@ -45,6 +46,17 @@ export default function FoodList({ foods, onEdit, onDelete }: Props) {
         ))}
       </div>
     </div>
+  );
+}
+
+function VegetableInfo({ food }: { food: Food }) {
+  const grams = (food.vegetableGrams ?? 0) + (food.vegetableDailyPortion ?? 0) * vegetableDailyTargetGrams;
+  if (grams <= 0) return null;
+
+  return (
+    <p className="mt-2 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
+      野菜換算: {round1(grams)}g / 1日目標の{round1((grams / vegetableDailyTargetGrams) * 100)}%
+    </p>
   );
 }
 
