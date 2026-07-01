@@ -1,5 +1,5 @@
 import type { Food, Meal, NutritionTarget, ScoreWeights } from "../types";
-import { defaultTarget, defaultWeights } from "./scoring";
+import { allNutrientsAvailable, defaultTarget, defaultWeights } from "./scoring";
 
 const keys = {
   foods: "meal-score-foods-v1",
@@ -83,7 +83,25 @@ function readArray<T>(key: string, fallback: T[]): T[] {
   }
 }
 
-export const loadFoods = () => readArray<Food>(keys.foods, sampleFoods);
+function normalizeFood(food: Food): Food {
+  return {
+    ...food,
+    nutrientAvailability: {
+      ...allNutrientsAvailable,
+      ...(food.nutrientAvailability ?? {}),
+    },
+    servingLabel: food.servingLabel ?? "1食",
+    inputBasisAmount: food.inputBasisAmount ?? 1,
+    inputBasisUnit: food.inputBasisUnit ?? "食",
+    packageAmount: food.packageAmount ?? 0,
+    packageUnit: food.packageUnit ?? "g",
+    packageServings: food.packageServings ?? 0,
+    servingUnit: food.servingUnit ?? "食",
+    conversionFactor: food.conversionFactor ?? 1,
+  };
+}
+
+export const loadFoods = () => readArray<Food>(keys.foods, sampleFoods).map(normalizeFood);
 export const saveFoods = (foods: Food[]) => localStorage.setItem(keys.foods, JSON.stringify(foods));
 
 export const loadMeals = () => readArray<Meal>(keys.meals, sampleMeals);

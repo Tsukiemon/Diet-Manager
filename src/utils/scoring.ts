@@ -2,11 +2,33 @@ import type {
   Food,
   Meal,
   MealWithScore,
+  NutrientAvailability,
+  NutrientKey,
   NutritionTarget,
   NutritionTotals,
   ScoreBreakdown,
   ScoreWeights,
 } from "../types";
+
+export const nutrientKeys: NutrientKey[] = [
+  "calories",
+  "protein",
+  "fat",
+  "carbs",
+  "sugar",
+  "fiber",
+  "salt",
+];
+
+export const allNutrientsAvailable: NutrientAvailability = {
+  calories: true,
+  protein: true,
+  fat: true,
+  carbs: true,
+  sugar: true,
+  fiber: true,
+  salt: true,
+};
 
 export const defaultTarget: NutritionTarget = {
   calories: 2300,
@@ -134,6 +156,26 @@ export function calculateTotals(meal: Meal, foods: Food[]): NutritionTotals {
   }, emptyTotals);
 }
 
+export function getFoodAvailability(food: Food): NutrientAvailability {
+  return { ...allNutrientsAvailable, ...(food.nutrientAvailability ?? {}) };
+}
+
+export function calculateScoredNutrients(meal: Meal, foods: Food[]): NutrientAvailability {
+  const foodMap = new Map(foods.map((food) => [food.id, food]));
+  const mealFoods = meal.items
+    .map((item) => foodMap.get(item.foodId))
+    .filter((food): food is Food => Boolean(food));
+
+  if (!mealFoods.length) {
+    return { ...allNutrientsAvailable };
+  }
+
+  return nutrientKeys.reduce<NutrientAvailability>((result, key) => {
+    result[key] = mealFoods.every((food) => getFoodAvailability(food)[key]);
+    return result;
+  }, { ...allNutrientsAvailable });
+}
+
 function weightedAverage(entries: Array<[number, number]>) {
   const totalWeight = entries.reduce((sum, [, weight]) => sum + Math.max(0, weight), 0);
   if (totalWeight <= 0) return 0;
@@ -148,6 +190,7 @@ export function calculateScore(
   weights: ScoreWeights,
 ): ScoreBreakdown {
   const totals = calculateTotals(meal, foods);
+  const scoredNutrients = calculateScoredNutrients(meal, foods);
   const nutrientScores = {
     calories: normalScore(totals.calories, target.calories),
     protein: proteinScore(totals.protein, target.protein),
@@ -159,15 +202,15 @@ export function calculateScore(
   };
 
   const nutritionEntries: Array<[number, number]> = [
-    [nutrientScores.calories, weights.nutrients.calories],
-    [nutrientScores.protein, weights.nutrients.protein],
-    [nutrientScores.fat, weights.nutrients.fat],
-    [nutrientScores.carbs, weights.nutrients.carbs],
-    [nutrientScores.fiber, weights.nutrients.fiber],
-    [nutrientScores.salt, weights.nutrients.salt],
+    ...(scoredNutrients.calories ? [[nutrientScores.calories, weights.nutrients.calories] as [number, number]] : []),
+    ...(scoredNutrients.protein ? [[nutrientScores.protein, weights.nutrients.protein] as [number, number]] : []),
+    ...(scoredNutrients.fat ? [[nutrientScores.fat, weights.nutrients.fat] as [number, number]] : []),
+    ...(scoredNutrients.carbs ? [[nutrientScores.carbs, weights.nutrients.carbs] as [number, number]] : []),
+    ...(scoredNutrients.fiber ? [[nutrientScores.fiber, weights.nutrients.fiber] as [number, number]] : []),
+    ...(scoredNutrients.salt ? [[nutrientScores.salt, weights.nutrients.salt] as [number, number]] : []),
   ];
 
-  if (target.includeSugarInScore) {
+  if (target.includeSugarInScore && scoredNutrients.sugar) {
     nutritionEntries.push([nutrientScores.sugar, weights.nutrients.sugar]);
   }
 
@@ -190,6 +233,7 @@ export function calculateScore(
 
   return {
     nutrientScores,
+    scoredNutrients,
     nutritionScore: round1(nutritionScore),
     priceScore: round1(priceScore),
     sustainabilityScore: round1(sustainabilityScore),
