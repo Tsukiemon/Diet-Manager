@@ -1,3 +1,14 @@
+export type NutrientKey =
+  | "calories"
+  | "protein"
+  | "fat"
+  | "carbs"
+  | "sugar"
+  | "fiber"
+  | "salt";
+
+export type NutrientAvailability = Record<NutrientKey, boolean>;
+
 export type Food = {
   id: string;
   name: string;
@@ -10,6 +21,15 @@ export type Food = {
   sugar: number;
   fiber: number;
   salt: number;
+  nutrientAvailability?: NutrientAvailability;
+  servingLabel?: string;
+  inputBasisAmount?: number;
+  inputBasisUnit?: string;
+  packageAmount?: number;
+  packageUnit?: string;
+  packageServings?: number;
+  servingUnit?: string;
+  conversionFactor?: number;
   memo: string;
   tags: string[];
 };
@@ -77,6 +97,7 @@ export type NutritionTotals = {
 
 export type ScoreBreakdown = {
   nutrientScores: NutrientWeights;
+  scoredNutrients: NutrientAvailability;
   nutritionScore: number;
   priceScore: number;
   sustainabilityScore: number;
