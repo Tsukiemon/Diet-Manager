@@ -1,4 +1,4 @@
-import type { Food, Meal, NutritionTarget, ScoreWeights } from "../types";
+import type { DailyPortfolio, Food, Meal, NutritionTarget, ScoreWeights } from "../types";
 import { allNutrientsAvailable, defaultTarget, defaultWeights } from "./scoring";
 
 const keys = {
@@ -6,6 +6,17 @@ const keys = {
   meals: "meal-score-meals-v1",
   target: "meal-score-target-v1",
   weights: "meal-score-weights-v1",
+  portfolio: "meal-score-portfolio-v1",
+};
+
+export const defaultPortfolio: DailyPortfolio = {
+  breakfast: "",
+  morningSnack: "",
+  lunch: "",
+  afternoonSnack: "",
+  dinner: "",
+  otherSnack: "",
+  postWorkoutProtein: "",
 };
 
 export const sampleFoods: Food[] = [
@@ -112,6 +123,9 @@ export const saveTarget = (target: NutritionTarget) => localStorage.setItem(keys
 
 export const loadWeights = () => read<ScoreWeights>(keys.weights, defaultWeights);
 export const saveWeights = (weights: ScoreWeights) => localStorage.setItem(keys.weights, JSON.stringify(weights));
+
+export const loadPortfolio = () => read<DailyPortfolio>(keys.portfolio, defaultPortfolio);
+export const savePortfolio = (portfolio: DailyPortfolio) => localStorage.setItem(keys.portfolio, JSON.stringify(portfolio));
 
 export const resetAllStorage = () => {
   Object.values(keys).forEach((key) => localStorage.removeItem(key));
