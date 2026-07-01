@@ -42,6 +42,7 @@ export default function MealCard({ meal, target, onSave, onDelete }: Props) {
             target={targetValue}
             unit={unit}
             score={meal.score.nutrientScores[key]}
+            scoreEnabled={meal.score.scoredNutrients[key]}
             sensitiveOver={sensitiveOver}
           />
         ))}
@@ -51,8 +52,12 @@ export default function MealCard({ meal, target, onSave, onDelete }: Props) {
         <span className="score-chip bg-emerald-50 text-emerald-800">栄養 {meal.score.nutritionScore}</span>
         <span className="score-chip bg-sky-50 text-sky-800">価格 {meal.score.priceScore}</span>
         <span className="score-chip bg-orange-50 text-orange-800">継続 {meal.score.sustainabilityScore}</span>
-        <span className="score-chip bg-stone-100 text-stone-700">糖質 {round1(meal.score.totals.sugar)}g</span>
-        <span className="score-chip bg-stone-100 text-stone-700">食物繊維 {round1(meal.score.totals.fiber)}g</span>
+        <span className="score-chip bg-stone-100 text-stone-700">
+          糖質 {meal.score.scoredNutrients.sugar ? `${round1(meal.score.totals.sugar)}g` : "対象外"}
+        </span>
+        <span className="score-chip bg-stone-100 text-stone-700">
+          食物繊維 {meal.score.scoredNutrients.fiber ? `${round1(meal.score.totals.fiber)}g` : "対象外"}
+        </span>
       </div>
 
       {meal.memo && <p className="mt-3 text-sm text-stone-600">{meal.memo}</p>}

@@ -7,6 +7,7 @@ type Props = {
   target: number;
   unit: string;
   score?: number;
+  scoreEnabled?: boolean;
   sensitiveOver?: boolean;
 };
 
@@ -16,6 +17,7 @@ export default function NutritionBar({
   target,
   unit,
   score,
+  scoreEnabled = true,
   sensitiveOver,
 }: Props) {
   const ratio = target > 0 ? actual / target : 0;
@@ -29,16 +31,19 @@ export default function NutritionBar({
         <span className="font-semibold text-stone-700">{label}</span>
         <span className={over && sensitiveOver ? "font-bold text-coral" : "text-stone-600"}>
           {round1(actual)} / {round1(target)} {unit}
-          {score !== undefined ? `・${round1(score)}点` : ""}
+          {scoreEnabled && score !== undefined ? `・${round1(score)}点` : "・対象外"}
         </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-stone-200">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${width}%` }} />
       </div>
-      {over && (
+      {over && scoreEnabled && (
         <p className={sensitiveOver ? "text-xs font-semibold text-coral" : "text-xs text-amber-700"}>
           目標を{round1((ratio - 1) * 100)}%超過
         </p>
+      )}
+      {!scoreEnabled && (
+        <p className="text-xs text-stone-500">献立内にこの栄養値が未表示の食品があるため、栄養スコアから除外</p>
       )}
     </div>
   );

@@ -81,11 +81,15 @@ export default function MealRanking({ foods, meals, target, weights, onDelete }:
                   <td className="px-3 py-2">{meal.score.priceScore}</td>
                   <td className="px-3 py-2">{meal.score.sustainabilityScore}</td>
                   <td className="px-3 py-2">{round0(meal.score.totals.price)}</td>
-                  <td className="px-3 py-2">{round0(meal.score.totals.calories)}</td>
-                  <td className="px-3 py-2">P{round1(meal.score.totals.protein)} F{round1(meal.score.totals.fat)} C{round1(meal.score.totals.carbs)}</td>
-                  <td className="px-3 py-2">{round1(meal.score.totals.sugar)}</td>
-                  <td className="px-3 py-2">{round1(meal.score.totals.fiber)}</td>
-                  <td className={`px-3 py-2 font-semibold ${meal.score.totals.salt > target.salt ? "text-coral" : ""}`}>{round1(meal.score.totals.salt)}</td>
+                  <td className="px-3 py-2">{formatNutrient(meal, "calories", round0(meal.score.totals.calories))}</td>
+                  <td className="px-3 py-2">
+                    P{formatNutrient(meal, "protein", round1(meal.score.totals.protein))} F{formatNutrient(meal, "fat", round1(meal.score.totals.fat))} C{formatNutrient(meal, "carbs", round1(meal.score.totals.carbs))}
+                  </td>
+                  <td className="px-3 py-2">{formatNutrient(meal, "sugar", round1(meal.score.totals.sugar))}</td>
+                  <td className="px-3 py-2">{formatNutrient(meal, "fiber", round1(meal.score.totals.fiber))}</td>
+                  <td className={`px-3 py-2 font-semibold ${meal.score.scoredNutrients.salt && meal.score.totals.salt > target.salt ? "text-coral" : ""}`}>
+                    {formatNutrient(meal, "salt", round1(meal.score.totals.salt))}
+                  </td>
                   <td className="px-3 py-2">{meal.foods.map((food) => `${food.name}x${food.quantity}`).join(", ")}</td>
                 </tr>
               ))}
@@ -96,6 +100,10 @@ export default function MealRanking({ foods, meals, target, weights, onDelete }:
       {!ranked.length && <div className="panel text-sm text-stone-600">条件に合う献立がありません。</div>}
     </section>
   );
+}
+
+function formatNutrient(meal: MealWithScore, key: keyof MealWithScore["score"]["scoredNutrients"], value: number) {
+  return meal.score.scoredNutrients[key] ? value : "対象外";
 }
 
 export function filterMeals(meals: MealWithScore[], filters: RankingFilters) {
