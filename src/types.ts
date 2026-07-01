@@ -30,6 +30,8 @@ export type Food = {
   packageServings?: number;
   servingUnit?: string;
   conversionFactor?: number;
+  vegetableGrams?: number;
+  vegetableDailyPortion?: number;
   memo: string;
   tags: string[];
 };
