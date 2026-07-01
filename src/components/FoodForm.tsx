@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { Food, NutrientAvailability, NutrientKey } from "../types";
-import { round0, round1 } from "../utils/scoring";
+import { getFoodAvailability, round0, round1 } from "../utils/scoring";
 
 type Props = {
   onAdd: (food: Food) => void;
+  editingFood?: Food | null;
+  onUpdate?: (food: Food) => void;
+  onCancelEdit?: () => void;
 };
 
 const nutrientFields: Array<{ key: NutrientKey; label: string; unit: string }> = [
@@ -38,8 +41,36 @@ const blank = {
   tags: "",
 };
 
-export default function FoodForm({ onAdd }: Props) {
+function foodToForm(food: Food) {
+  const availability = getFoodAvailability(food);
+  return {
+    name: food.name,
+    store: food.store,
+    price: String(round1(food.price)),
+    inputBasisAmount: String(food.inputBasisAmount ?? 1),
+    inputBasisUnit: food.inputBasisUnit ?? "食",
+    packageAmount: "",
+    packageUnit: food.packageUnit ?? "g",
+    packageServings: "",
+    servingUnit: food.servingUnit ?? "食",
+    calories: availability.calories ? String(round1(food.calories)) : "",
+    protein: availability.protein ? String(round1(food.protein)) : "",
+    fat: availability.fat ? String(round1(food.fat)) : "",
+    carbs: availability.carbs ? String(round1(food.carbs)) : "",
+    sugar: availability.sugar ? String(round1(food.sugar)) : "",
+    fiber: availability.fiber ? String(round1(food.fiber)) : "",
+    salt: availability.salt ? String(round1(food.salt)) : "",
+    memo: food.memo,
+    tags: food.tags.join(", "),
+  };
+}
+
+export default function FoodForm({ onAdd, editingFood, onUpdate, onCancelEdit }: Props) {
   const [form, setForm] = useState(blank);
+
+  useEffect(() => {
+    setForm(editingFood ? foodToForm(editingFood) : blank);
+  }, [editingFood]);
 
   const set = (key: keyof typeof blank, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
   const number = (value: string) => Math.max(0, Number(value) || 0);
@@ -73,8 +104,8 @@ export default function FoodForm({ onAdd }: Props) {
       return availability;
     }, {} as NutrientAvailability);
 
-    onAdd({
-      id: crypto.randomUUID(),
+    const nextFood: Food = {
+      id: editingFood?.id ?? crypto.randomUUID(),
       name: form.name.trim(),
       store: form.store.trim(),
       price: number(form.price) * priceFactor,
@@ -96,14 +127,19 @@ export default function FoodForm({ onAdd }: Props) {
       conversionFactor,
       memo: form.memo.trim(),
       tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-    });
+    };
+    if (editingFood && onUpdate) {
+      onUpdate(nextFood);
+    } else {
+      onAdd(nextFood);
+    }
     setForm(blank);
   };
 
   return (
     <form className="panel space-y-5" onSubmit={submit}>
       <div>
-        <h2 className="text-lg font-bold">食品登録</h2>
+        <h2 className="text-lg font-bold">{editingFood ? "食品編集" : "食品登録"}</h2>
         <p className="mt-1 text-sm text-stone-600">
           栄養値が表示されていない項目は空欄のままにしてください。0と空欄は別扱いです。
         </p>
@@ -159,7 +195,12 @@ export default function FoodForm({ onAdd }: Props) {
         <span className="label">メモ</span>
         <textarea className="field min-h-20" value={form.memo} onChange={(e) => set("memo", e.target.value)} />
       </label>
-      <button className="btn-primary w-full sm:w-auto" type="submit">食品を追加</button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <button className="btn-primary w-full sm:w-auto" type="submit">{editingFood ? "食品を更新" : "食品を追加"}</button>
+        {editingFood && (
+          <button className="btn-secondary w-full sm:w-auto" type="button" onClick={onCancelEdit}>編集をやめる</button>
+        )}
+      </div>
     </form>
   );
 }

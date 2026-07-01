@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Food, Meal, NutritionTarget, ScoreWeights } from "../types";
 import { attachScores } from "../utils/scoring";
 import MealCard from "./MealCard";
@@ -9,16 +9,23 @@ type Props = {
   target: NutritionTarget;
   weights: ScoreWeights;
   onSave: (meal: Meal) => void;
+  onUpdate: (meal: Meal) => void;
   onDelete: (id: string) => void;
 };
 
-export default function MealBuilder({ foods, meals, target, weights, onSave, onDelete }: Props) {
+export default function MealBuilder({ foods, meals, target, weights, onSave, onUpdate, onDelete }: Props) {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [items, setItems] = useState([{ foodId: foods[0]?.id ?? "", quantity: 1 }]);
   const [ease, setEase] = useState(4);
   const [satisfaction, setSatisfaction] = useState(4);
   const [prepEase, setPrepEase] = useState(4);
   const [memo, setMemo] = useState("");
+
+  useEffect(() => {
+    if (!foods.length || items.some((item) => item.foodId)) return;
+    setItems([{ foodId: foods[0]?.id ?? "", quantity: 1 }]);
+  }, [foods, items]);
 
   const preview = useMemo(() => {
     const meal: Meal = {
@@ -43,8 +50,8 @@ export default function MealBuilder({ foods, meals, target, weights, onSave, onD
   const save = () => {
     const validItems = items.filter((item) => item.foodId && item.quantity > 0);
     if (!validItems.length) return;
-    onSave({
-      id: crypto.randomUUID(),
+    const nextMeal: Meal = {
+      id: editingId ?? crypto.randomUUID(),
       name: name.trim() || `献立 ${new Date().toLocaleDateString("ja-JP")}`,
       items: validItems,
       ease,
@@ -52,16 +59,39 @@ export default function MealBuilder({ foods, meals, target, weights, onSave, onD
       prepEase,
       memo: memo.trim(),
       createdAt: new Date().toISOString(),
-    });
+    };
+    if (editingId) onUpdate(nextMeal);
+    else onSave(nextMeal);
+    setEditingId(null);
     setName("");
     setItems([{ foodId: foods[0]?.id ?? "", quantity: 1 }]);
+    setMemo("");
+  };
+
+  const editMeal = (meal: Meal) => {
+    setEditingId(meal.id);
+    setName(meal.name);
+    setItems(meal.items.length ? meal.items : [{ foodId: foods[0]?.id ?? "", quantity: 1 }]);
+    setEase(meal.ease);
+    setSatisfaction(meal.satisfaction);
+    setPrepEase(meal.prepEase);
+    setMemo(meal.memo);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setName("");
+    setItems([{ foodId: foods[0]?.id ?? "", quantity: 1 }]);
+    setEase(4);
+    setSatisfaction(4);
+    setPrepEase(4);
     setMemo("");
   };
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
       <section className="panel space-y-4">
-        <h2 className="text-lg font-bold">献立作成</h2>
+        <h2 className="text-lg font-bold">{editingId ? "献立編集" : "献立作成"}</h2>
         <label className="block space-y-1">
           <span className="label">献立名</span>
           <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="例：朝の高タンパクセット" />
@@ -89,7 +119,10 @@ export default function MealBuilder({ foods, meals, target, weights, onSave, onD
           <span className="label">メモ</span>
           <textarea className="field min-h-20" value={memo} onChange={(e) => setMemo(e.target.value)} />
         </label>
-        <button className="btn-primary w-full" onClick={save} type="button">献立を保存</button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button className="btn-primary flex-1" onClick={save} type="button">{editingId ? "献立を更新" : "献立を保存"}</button>
+          {editingId && <button className="btn-secondary" onClick={cancelEdit} type="button">編集をやめる</button>}
+        </div>
       </section>
 
       <div className="space-y-4">
@@ -100,7 +133,10 @@ export default function MealBuilder({ foods, meals, target, weights, onSave, onD
             {meals.map((meal) => (
               <div className="flex items-center justify-between gap-3 rounded-md border border-stone-200 p-2" key={meal.id}>
                 <span className="text-sm font-semibold">{meal.name}</span>
-                <button className="rounded-md px-2 py-1 text-xs font-semibold text-coral hover:bg-red-50" onClick={() => onDelete(meal.id)}>削除</button>
+                <div className="flex gap-1">
+                  <button className="rounded-md px-2 py-1 text-xs font-semibold text-mint hover:bg-emerald-50" onClick={() => editMeal(meal)}>編集</button>
+                  <button className="rounded-md px-2 py-1 text-xs font-semibold text-coral hover:bg-red-50" onClick={() => onDelete(meal.id)}>削除</button>
+                </div>
               </div>
             ))}
           </div>

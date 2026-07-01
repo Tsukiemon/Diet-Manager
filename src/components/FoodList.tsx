@@ -3,10 +3,11 @@ import { getFoodAvailability, round0, round1 } from "../utils/scoring";
 
 type Props = {
   foods: Food[];
+  onEdit: (food: Food) => void;
   onDelete: (id: string) => void;
 };
 
-export default function FoodList({ foods, onDelete }: Props) {
+export default function FoodList({ foods, onEdit, onDelete }: Props) {
   return (
     <div className="panel">
       <div className="flex items-center justify-between gap-3">
@@ -21,9 +22,14 @@ export default function FoodList({ foods, onDelete }: Props) {
                 <h3 className="font-bold">{food.name}</h3>
                 <p className="text-xs text-stone-500">{food.store || "入手先未設定"}</p>
               </div>
-              <button className="rounded-md px-2 py-1 text-xs font-semibold text-coral hover:bg-red-50" onClick={() => onDelete(food.id)}>
-                削除
-              </button>
+              <div className="flex gap-1">
+                <button className="rounded-md px-2 py-1 text-xs font-semibold text-mint hover:bg-emerald-50" onClick={() => onEdit(food)}>
+                  編集
+                </button>
+                <button className="rounded-md px-2 py-1 text-xs font-semibold text-coral hover:bg-red-50" onClick={() => onDelete(food.id)}>
+                  削除
+                </button>
+              </div>
             </div>
             <div className="mt-2 text-sm font-semibold">
               {food.servingLabel ?? "1食"}あたり {round0(food.price)}円 / {round0(food.calories)}kcal / P{round1(food.protein)} F{round1(food.fat)} C{round1(food.carbs)}
